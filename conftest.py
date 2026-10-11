@@ -24,3 +24,10 @@ def cleanup_user(db, unique_email):
     yield unique_email
     db.execute("DELETE FROM users WHERE email = %s", (unique_email,))
     db.commit()
+
+@pytest.fixture
+def cleanup_emails(db, unique_email):
+    emails = [unique_email], f"{unique_email}_2"
+    yield emails
+    db.execute("DELETE FROM emails WHERE email = ANY(%s)", (unique_email,))
+    db.commit()

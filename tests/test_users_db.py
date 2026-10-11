@@ -1,7 +1,7 @@
 import allure
 import pytest
 import psycopg2
-from database.queries import create_user, get_user_by_email, delete_user_by_email, count_users
+from database.queries import create_user, get_user_by_email, delete_user_by_email, count_users, update_user_age
 
 
 @allure.feature("Database")
@@ -48,3 +48,19 @@ def test_count_increases(db, cleanup_user):
     create_user(db, "Test", cleanup_user, 25)
     after = count_users(db)
     assert after == before + 1
+
+
+def test_update_user(db, cleanup_user):
+    user = create_user(db, "Test", cleanup_user, 99)
+    new_age = update_user_age(db, cleanup_user, 25)
+    assert user[3] == new_age
+
+def test_get_adults(db, unique_email):
+    create_user(db, "Test", unique_email, 25)
+    create_user(db, "Test", unique_email, 17)
+    rows = db.fetch_all("SELECT * FROM users WHERE age >= %s AND email LIKE %s", (18, "test_%"))
+    assert rows[3] >= 18
+
+def test_order_by_age(db, cleanup_user):
+    rows = db.fetch_all("SELECT * FROM users WHERE email LIKE %s ORDER BY age ASC", ("test_%",))
+    assert rows[0][3] <= rows[1][3]
