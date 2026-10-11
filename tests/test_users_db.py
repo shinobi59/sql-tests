@@ -1,6 +1,7 @@
 import allure
 import pytest
 import psycopg2
+
 from database.queries import create_user, get_user_by_email, delete_user_by_email, count_users, update_user_age
 
 
@@ -51,16 +52,35 @@ def test_count_increases(db, cleanup_user):
 
 
 def test_update_user(db, cleanup_user):
-    user = create_user(db, "Test", cleanup_user, 99)
-    new_age = update_user_age(db, cleanup_user, 25)
-    assert user[3] == new_age
+    create_user(db, "Test", cleanup_user, 99)
+    update_user_age(db, cleanup_user, 25)
 
-def test_get_adults(db, unique_email):
-    create_user(db, "Test", unique_email, 25)
-    create_user(db, "Test", unique_email, 17)
-    rows = db.fetch_all("SELECT * FROM users WHERE age >= %s AND email LIKE %s", (18, "test_%"))
-    assert rows[3] >= 18
+    user = get_user_by_email(db, cleanup_user)
+    assert user is not None
+    assert user[3] == 25
 
-def test_order_by_age(db, cleanup_user):
-    rows = db.fetch_all("SELECT * FROM users WHERE email LIKE %s ORDER BY age ASC", ("test_%",))
-    assert rows[0][3] <= rows[1][3]
+
+def test_get_adults(db, cleanup_emails):
+    email1, email2 = cleanup_emails
+    create_user(db, "Test1", email1, 25)
+    create_user(db, "Test2", email2, 17)
+
+    rows = db.fetch_all(
+        "SELECT * FROM users WHERE age >= %s AND email = ANY(%s)",
+        (18, cleanup_emails),
+    )
+    assert len(rows) == 1, f"Ожидали 1 взрослого, получили {len(rows)}"
+    assert rows[0][3] >= 18, f"Возраст не >= 18: {rows[0][3]}"
+
+
+def test_order_by_age(db, cleanup_emails):
+    email1, email2 = cleanup_emails
+    create_user(db, "Test1", email1, 25)
+    create_user(db, "Test2", email2, 17)
+
+    rows = db.fetch_all(
+        "SELECT * FROM users WHERE email = ANY(%s) ORDER BY age ASC",
+        (cleanup_emails,),
+    )
+    assert len(rows) == 2, f"Ожидали 2, получили {len(rows)}"
+    assert rows[0][3] <= rows[1][3], "Не отсортировано по возрасту"

@@ -20,7 +20,9 @@ def get_user_by_email(db, email):
 
 def delete_user_by_email(db, email):
     safe_execute(
-        db.execute("DELETE FROM users WHERE email = %s", (email,))
+        db,
+        ("DELETE FROM users WHERE email = %s",
+        (email,))
     )
 
 
