@@ -1,16 +1,18 @@
 import pytest
 from database.connection import Database
 import time
+import os
+
 
 
 @pytest.fixture(scope="session")
 def db():
     database = Database(
-        host="localhost",
-        port=5432,
-        database="qa_learning",
-        user="postgres",
-        password="postgres"
+        host=os.getenv("DB_HOST", "localhost"),
+        port=int(os.getenv("DB_PORT", "5432")),
+        database=os.getenv("DB_NAME", "qa_learning"),
+        user=os.getenv("DB_USER", "postgres"),
+        password=os.getenv("DB_PASSWORD", "postgres"),
     )
     yield database
     database.close()
