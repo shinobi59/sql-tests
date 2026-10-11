@@ -1,6 +1,13 @@
 def create_user(db, name, email, age):
-    db.execute("INSERT INTO users (name, email, age) VALUES (%s, %s, %s)", (name, email, age))
-    db.commit()
+    try:
+        db.execute(
+            "INSERT INTO users (name, email, age) VALUES (%s, %s, %s)",
+            (name, email, age),
+        )
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise   # ← обязательно! Пробрасываем исключение дальше
 
 def get_user_by_email(db, email):
     return db.fetch_one("SELECT * FROM users WHERE email = %s", (email,))
